@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use App\Models\Post;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Response;
@@ -25,13 +26,7 @@ class BlogController extends Controller
      */
     public function recent(): Response
     {
-        $postReactionScoreExpression = $this->postReactionScoreExpression();
-
-        $posts = Post::query()
-            ->select('posts.*')
-            ->selectRaw('(SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id AND comments.deleted_at IS NULL) as comments_count')
-            ->selectRaw('(SELECT COUNT(*) FROM post_reactions WHERE post_reactions.post_id = posts.id) as reactions_count')
-            ->selectRaw("COALESCE({$postReactionScoreExpression}, 0) as reaction_score")
+        $posts = $this->basePostFeedQuery()
             ->latest()
             ->paginate(8)
             ->withQueryString();
@@ -80,16 +75,12 @@ class BlogController extends Controller
      */
     public function popular(): Response
     {
-        $postReactionScoreExpression = $this->postReactionScoreExpression();
+        $popularityScoreExpression = '(COALESCE(post_reaction_stats.reaction_score, 0) * 1.5) + (comments_count * 2) + (posts.views_count * 0.2)';
 
-        $posts = Post::query()
-            ->select('posts.*')
-            ->selectRaw('(SELECT COUNT(*) FROM post_reactions WHERE post_reactions.post_id = posts.id) as reactions_count')
-            ->selectRaw('(SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id AND comments.deleted_at IS NULL) as comments_count')
-            ->selectRaw("COALESCE({$postReactionScoreExpression}, 0) as reaction_score")
-            ->selectRaw("(COALESCE({$postReactionScoreExpression}, 0) * 1.5) + ((SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id AND comments.deleted_at IS NULL) * 2) + (views_count * 0.2) as popularity_score")
-            ->orderByRaw("(COALESCE({$postReactionScoreExpression}, 0) * 1.5) + ((SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id AND comments.deleted_at IS NULL) * 2) + (views_count * 0.2) DESC")
-            ->orderByDesc('created_at')
+        $posts = $this->basePostFeedQuery()
+            ->selectRaw("{$popularityScoreExpression} as popularity_score")
+            ->orderByRaw("{$popularityScoreExpression} DESC")
+            ->orderByDesc('posts.created_at')
             ->paginate(8)
             ->withQueryString();
 
@@ -166,21 +157,28 @@ class BlogController extends Controller
                 ->value('reaction');
         }
 
-        $commentReactionScoreExpression = $this->commentReactionScoreExpression();
+        $commentReactionStatsSubQuery = DB::table('comment_reactions')
+            ->select('comment_id')
+            ->selectRaw('COUNT(*) as reactions_count')
+            ->selectRaw('SUM(' . $this->reactionWeightCaseExpression('comment_reactions.reaction') . ') as reaction_score')
+            ->groupBy('comment_id');
 
         $comments = Comment::query()
             ->where('post_id', $post->id)
             ->with('user:id,name')
+            ->leftJoinSub($commentReactionStatsSubQuery, 'comment_reaction_stats', function ($join): void {
+                $join->on('comments.id', '=', 'comment_reaction_stats.comment_id');
+            })
             ->select('comments.*')
-            ->selectRaw('(SELECT COUNT(*) FROM comments as child_comments WHERE child_comments.parent_id = comments.id AND child_comments.deleted_at IS NULL) as replies_count')
-            ->selectRaw('(SELECT COUNT(*) FROM comment_reactions WHERE comment_reactions.comment_id = comments.id) as reactions_count')
-            ->selectRaw("COALESCE({$commentReactionScoreExpression}, 0) as reaction_score")
+            ->selectRaw('COALESCE(comment_reaction_stats.reactions_count, 0) as reactions_count')
+            ->selectRaw('COALESCE(comment_reaction_stats.reaction_score, 0) as reaction_score')
+            ->withCount('replies')
             ->when($commentSort === 'popular', function ($query): void {
                 $query
                     ->orderByRaw('((reaction_score * 1.5) + (replies_count * 2)) DESC')
-                    ->orderByDesc('created_at');
+                    ->orderByDesc('comments.created_at');
             }, function ($query): void {
-                $query->orderByDesc('created_at');
+                $query->orderByDesc('comments.created_at');
             })
             ->get();
 
@@ -236,19 +234,24 @@ class BlogController extends Controller
     }
 
     /**
-     * 投稿リアクションスコアを算出する副問い合わせを返す。
+     * フィード系の投稿一覧クエリを返す。
      */
-    private function postReactionScoreExpression(): string
+    private function basePostFeedQuery(): Builder
     {
-        return '(SELECT SUM(' . $this->reactionWeightCaseExpression('post_reactions.reaction') . ') FROM post_reactions WHERE post_reactions.post_id = posts.id)';
-    }
+        $postReactionStatsSubQuery = DB::table('post_reactions')
+            ->select('post_id')
+            ->selectRaw('COUNT(*) as reactions_count')
+            ->selectRaw('SUM(' . $this->reactionWeightCaseExpression('post_reactions.reaction') . ') as reaction_score')
+            ->groupBy('post_id');
 
-    /**
-     * コメントリアクションスコアを算出する副問い合わせを返す。
-     */
-    private function commentReactionScoreExpression(): string
-    {
-        return '(SELECT SUM(' . $this->reactionWeightCaseExpression('comment_reactions.reaction') . ') FROM comment_reactions WHERE comment_reactions.comment_id = comments.id)';
+        return Post::query()
+            ->leftJoinSub($postReactionStatsSubQuery, 'post_reaction_stats', function ($join): void {
+                $join->on('posts.id', '=', 'post_reaction_stats.post_id');
+            })
+            ->select('posts.*')
+            ->withCount('comments')
+            ->selectRaw('COALESCE(post_reaction_stats.reactions_count, 0) as reactions_count')
+            ->selectRaw('COALESCE(post_reaction_stats.reaction_score, 0) as reaction_score');
     }
 
     /**

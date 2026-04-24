@@ -6,11 +6,11 @@ info:
     # BlogApp コメント API
 
     BlogApp 用のコメント管理APIです。
-    ユーザーは記事に対してコメントを投稿、編集、削除できます。
+    ユーザーは投稿に対してコメントを投稿、編集、削除できます。
 
     ## 機能
-    - 記事の一覧取得
-    - 記事へのコメント投稿（10〜100文字）
+    - 投稿の一覧取得
+    - 投稿へのコメント投稿（10〜100文字）
     - コメント一覧取得（新着順）
     - コメント編集
     - コメント削除
@@ -19,8 +19,6 @@ externalDocs:
   description: Find out how to create a GitHub repo for your OpenAPI definition.
   url: 'https://github.com/Rebilly/generator-openapi-repo'
 tags:
-  - name: Articles
-    description: 記事の取得 / Article operations
   - name: Posts
     description: 投稿の作成 / Post creation
   - name: Comments
@@ -168,16 +166,16 @@ paths:
         '401':
           description: '未認証 / Unauthenticated'
 
-  /articles:
+  /posts:
     get:
       tags:
-        - Articles
-      summary: 全記事を取得
+        - Posts
+      summary: 全投稿を取得
       description: |
-        アプリケーション内のすべての記事を取得します。
+        アプリケーション内のすべての投稿を取得します。
         
-        Fetch all articles in the application.
-      operationId: getArticles
+        Fetch all posts in the application.
+      operationId: getPosts
       responses:
         '200':
           description: '成功 / Success'
@@ -200,10 +198,11 @@ paths:
                     title: '2番目の記事'
                     content: '別の記事の内容です'
                     created_at: '2024-01-02T00:00:00Z'
+        '400':
+          description: '不正なリクエスト / Bad request'
         '500':
           description: 'サーバーエラー / Server error'
 
-  /posts:
     post:
       tags:
         - Posts
@@ -243,20 +242,20 @@ paths:
         '422':
           description: 'バリデーションエラー / Validation error'
 
-  /articles/{article_id}/comments:
+  /posts/{post}/comments:
     get:
       tags:
         - Comments
-      summary: 記事のコメント一覧を取得
+      summary: 投稿のコメント一覧を取得
       description: |
-        指定された記事のコメント一覧を取得します。新着順に並べ替えられています。
+        指定された投稿のコメント一覧を取得します。新着順に並べ替えられています。
         
-        Get comments for the specified article. Results are sorted by newest first.
-      operationId: getArticleComments
+        Get comments for the specified post. Results are sorted by newest first.
+      operationId: getPostComments
       parameters:
-        - name: article_id
+        - name: post
           in: path
-          description: '記事ID / Article ID'
+          description: '投稿ID / Post ID'
           required: true
           schema:
             type: integer
@@ -281,7 +280,7 @@ paths:
                     created_at: '2024-01-01T12:00:00Z'
                     updated_at: '2024-01-01T12:00:00Z'
         '404':
-          description: '記事が見つかりません / Article not found'
+          description: '投稿が見つかりません / Post not found'
         '500':
           description: 'サーバーエラー / Server error'
 
@@ -290,18 +289,18 @@ paths:
         - Comments
       security:
         - bearerAuth: []
-      summary: 記事にコメントを投稿
+      summary: 投稿にコメントを投稿
       description: |
-        指定された記事に新しいコメントを投稿します。
+        指定された投稿に新しいコメントを投稿します。
         コメント内容は10〜100文字である必要があります。
         
-        Post a new comment on the specified article.
+        Post a new comment on the specified post.
         Comment content must be between 10-100 characters.
-      operationId: postComment
+      operationId: createPostComment
       parameters:
-        - name: article_id
+        - name: post
           in: path
-          description: '記事ID / Article ID'
+          description: '投稿ID / Post ID'
           required: true
           schema:
             type: integer
@@ -315,7 +314,6 @@ paths:
               $ref: '#/components/schemas/CommentCreate'
             example:
               content: 'これは非常に有用なコメントです'
-              user_id: 1
       responses:
         '201':
           description: 'コメントが正常に作成されました / Comment created successfully'
@@ -338,15 +336,14 @@ paths:
             バリデーションエラー / Validation error
             - コンテンツが短すぎる（最小10文字）/ Content too short (minimum 10 characters)
             - コンテンツが長すぎる（最大100文字）/ Content too long (maximum 100 characters)
-            - user_id が必要です / user_id is required
         '404':
-          description: '記事が見つかりません / Article not found'
+          description: '投稿が見つかりません / Post not found'
         '401':
           description: 'ログインが必要です / Authentication required'
         '500':
           description: 'サーバーエラー / Server error'
 
-  /articles/{article_id}/comments/{comment_id}:
+  /posts/{post}/comments/{comment}:
     patch:
       tags:
         - Comments
@@ -361,14 +358,14 @@ paths:
         Comment content must be between 10-100 characters.
       operationId: updateComment
       parameters:
-        - name: article_id
+        - name: post
           in: path
-          description: '記事ID / Article ID'
+          description: '投稿ID / Post ID'
           required: true
           schema:
             type: integer
             example: 1
-        - name: comment_id
+        - name: comment
           in: path
           description: 'コメントID / Comment ID'
           required: true
@@ -425,14 +422,14 @@ paths:
         Delete the specified comment.
       operationId: deleteComment
       parameters:
-        - name: article_id
+        - name: post
           in: path
-          description: '記事ID / Article ID'
+          description: '投稿ID / Post ID'
           required: true
           schema:
             type: integer
             example: 1
-        - name: comment_id
+        - name: comment
           in: path
           description: 'コメントID / Comment ID'
           required: true
@@ -514,7 +511,6 @@ components:
       description: 'コメント投稿時に必要なデータ / Data required when posting a comment'
       required:
         - content
-        - user_id
       properties:
         content:
           type: string
@@ -522,10 +518,6 @@ components:
           minLength: 10
           maxLength: 100
           example: 'これは素晴らしい記事です'
-        user_id:
-          type: integer
-          description: 'コメントを投稿するユーザーのID（必須） / ID of the user posting the comment (required)'
-          example: 1
 
     CommentUpdate:
       type: object

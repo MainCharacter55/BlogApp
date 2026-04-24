@@ -109,7 +109,32 @@
         @endif
     </div>
 
-    <p class="mt-3 text-sm leading-6 text-slate-200">{{ $comment->content }}</p>
+    @if ($isEditingComment && $canManageComment)
+        <form method="POST" action="{{ route('posts.comments.update', [$post, $comment]) }}" class="mt-3 space-y-3 rounded-2xl border border-cyan-400/30 bg-cyan-400/5 p-4">
+            @csrf
+            @method('PATCH')
+            <label for="edit-comment-content-{{ $comment->id }}" class="block text-xs uppercase tracking-[0.22em] text-cyan-300">コメントを編集</label>
+            <textarea
+                id="edit-comment-content-{{ $comment->id }}"
+                name="content"
+                rows="4"
+                class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
+            >{{ old('content', $comment->content) }}</textarea>
+
+            @error('content')
+                <p class="text-sm text-rose-300">{{ $message }}</p>
+            @enderror
+
+            <div class="flex flex-wrap gap-3">
+                <button class="rounded-full bg-cyan-400 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-cyan-300">更新する</button>
+                <a href="{{ route('posts.show', $post) }}?comment_sort={{ $commentSort }}#comment-{{ $comment->id }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10">
+                    キャンセル
+                </a>
+            </div>
+        </form>
+    @else
+        <p class="mt-3 text-sm leading-6 text-slate-200">{{ $comment->content }}</p>
+    @endif
 
     <div class="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-300">
         @auth

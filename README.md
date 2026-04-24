@@ -3,7 +3,7 @@
 日本語
 ====
 
-BlogApp は、投稿閲覧・コメント・リアクションを中心にしたシンプルなブログアプリです。API と Blade の両方を備えており、会員登録はメールトークンを使った二段階方式です。
+BlogApp は、投稿閲覧・コメント・リアクションを中心にしたシンプルなブログアプリです。API と Blade の両方を備えており、会員登録はメールトークンを使った二段階方式です。(DOCS.mdも確認してください。)
 
 ## 主な機能
 
@@ -34,14 +34,6 @@ BlogApp は、投稿閲覧・コメント・リアクションを中心にした
 - `/posts/{post}` 投稿詳細
 - `/login` ログイン
 - `/register` 会員登録
-
-## Swagger UI の使い方
-
-1. `http://localhost:8002` を開きます。
-2. 先に `POST /auth/login` を実行して `token` を取得します。
-3. Swagger UI 右上の `Authorize` を押します。
-4. `Bearer <token>` の形式で入力して保存します。
-5. `GET /auth/me` や認証が必要な `POST /posts/{post}/comments`、`POST /posts` などを実行できます。
 
 ## Web UI について
 
