@@ -1,0 +1,542 @@
+openapi: 3.1.0
+info:
+  version: 1.0.0
+  title: BlogApp コメント API
+  description: |
+    # BlogApp コメント API
+
+    BlogApp 用のコメント管理APIです。
+    ユーザーは記事に対してコメントを投稿、編集、削除できます。
+
+    ## 機能
+    - 記事の一覧取得
+    - 記事へのコメント投稿（10〜100文字）
+    - コメント一覧取得（新着順）
+    - コメント編集
+    - コメント削除
+
+externalDocs:
+  description: Find out how to create a GitHub repo for your OpenAPI definition.
+  url: 'https://github.com/Rebilly/generator-openapi-repo'
+tags:
+  - name: Articles
+    description: 記事の取得 / Article operations
+  - name: Posts
+    description: 投稿の作成 / Post creation
+  - name: Comments
+    description: コメント管理（投稿、編集、削除） / Comment management (create, update, delete)
+  - name: Auth
+    description: 会員登録とログイン / Registration and login
+
+servers:
+  - url: 'http://localhost/api'
+    description: 開発環境 (Development)
+  - url: 'https://api.example.com/api'
+    description: 本番環境 (Production)
+paths:
+  /auth/register/request:
+    post:
+      tags:
+        - Auth
+      summary: 会員登録用トークンを送信
+      description: |
+        メールアドレスのみを受け取り、会員登録用の認証トークンを送信します。
+        
+        Accept an email address and send a verification token for registration.
+      operationId: requestRegistrationToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: 'new-user@example.com'
+      responses:
+        '202':
+          description: '認証トークンを送信しました / Verification token sent'
+        '422':
+          description: 'バリデーションエラー / Validation error'
+
+  /auth/register/verify:
+    post:
+      tags:
+        - Auth
+      summary: 会員登録を完了
+      description: |
+        受信した認証トークンを検証し、名前とパスワードを登録して会員登録を完了します。
+        
+        Verify the token and complete the registration with name and password.
+      operationId: verifyRegistration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - token
+                - name
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                token:
+                  type: string
+                name:
+                  type: string
+                password:
+                  type: string
+                  minLength: 8
+      responses:
+        '201':
+          description: '会員登録が完了しました / Registration completed'
+        '422':
+          description: 'バリデーションエラー / Validation error'
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: ログイン
+      description: |
+        メールアドレスとパスワードでログインし、Sanctumトークンを返します。
+        
+        Log in with email and password and return a Sanctum token.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: 'ログイン成功 / Login successful'
+        '422':
+          description: 'バリデーションエラー / Validation error'
+
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: ログイン中ユーザー情報を取得
+      description: |
+        ログイン中のユーザー情報を返します。
+        
+        Return the authenticated user's profile.
+      operationId: me
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: '成功 / Success'
+        '401':
+          description: '未認証 / Unauthenticated'
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: ログアウト
+      description: |
+        現在のアクセストークンを無効化します。
+        
+        Revoke the current access token.
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 'ログアウト成功 / Logout successful'
+        '401':
+          description: '未認証 / Unauthenticated'
+
+  /articles:
+    get:
+      tags:
+        - Articles
+      summary: 全記事を取得
+      description: |
+        アプリケーション内のすべての記事を取得します。
+        
+        Fetch all articles in the application.
+      operationId: getArticles
+      responses:
+        '200':
+          description: '成功 / Success'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Article'
+              example:
+                data:
+                  - id: 1
+                    title: '最初の記事'
+                    content: '記事の内容です'
+                    created_at: '2024-01-01T00:00:00Z'
+                  - id: 2
+                    title: '2番目の記事'
+                    content: '別の記事の内容です'
+                    created_at: '2024-01-02T00:00:00Z'
+        '500':
+          description: 'サーバーエラー / Server error'
+
+  /posts:
+    post:
+      tags:
+        - Posts
+      security:
+        - bearerAuth: []
+      summary: 新しい投稿を作成
+      description: |
+        管理者ユーザーが新しい投稿を作成します。
+
+        Create a new post as an admin user.
+      operationId: createPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+              properties:
+                title:
+                  type: string
+                  maxLength: 255
+                  example: 'Django とつなぐ新しい記事'
+                content:
+                  type: string
+                  minLength: 20
+                  example: 'これは API から作成した新しい投稿の本文です。'
+      responses:
+        '201':
+          description: '投稿を作成しました / Post created'
+        '401':
+          description: '未認証 / Unauthenticated'
+        '403':
+          description: '権限がありません / Forbidden'
+        '422':
+          description: 'バリデーションエラー / Validation error'
+
+  /articles/{article_id}/comments:
+    get:
+      tags:
+        - Comments
+      summary: 記事のコメント一覧を取得
+      description: |
+        指定された記事のコメント一覧を取得します。新着順に並べ替えられています。
+        
+        Get comments for the specified article. Results are sorted by newest first.
+      operationId: getArticleComments
+      parameters:
+        - name: article_id
+          in: path
+          description: '記事ID / Article ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: '成功 / Success'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+              example:
+                data:
+                  - id: 1
+                    content: 'これは素晴らしい記事です'
+                    user_id: 1
+                    created_at: '2024-01-01T12:00:00Z'
+                    updated_at: '2024-01-01T12:00:00Z'
+        '404':
+          description: '記事が見つかりません / Article not found'
+        '500':
+          description: 'サーバーエラー / Server error'
+
+    post:
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      summary: 記事にコメントを投稿
+      description: |
+        指定された記事に新しいコメントを投稿します。
+        コメント内容は10〜100文字である必要があります。
+        
+        Post a new comment on the specified article.
+        Comment content must be between 10-100 characters.
+      operationId: postComment
+      parameters:
+        - name: article_id
+          in: path
+          description: '記事ID / Article ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        description: '新しいコメント / New comment'
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentCreate'
+            example:
+              content: 'これは非常に有用なコメントです'
+              user_id: 1
+      responses:
+        '201':
+          description: 'コメントが正常に作成されました / Comment created successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Comment'
+              example:
+                data:
+                  id: 1
+                  content: 'これは非常に有用なコメントです'
+                  user_id: 1
+                  created_at: '2024-01-01T12:00:00Z'
+                  updated_at: '2024-01-01T12:00:00Z'
+        '400':
+          description: |
+            バリデーションエラー / Validation error
+            - コンテンツが短すぎる（最小10文字）/ Content too short (minimum 10 characters)
+            - コンテンツが長すぎる（最大100文字）/ Content too long (maximum 100 characters)
+            - user_id が必要です / user_id is required
+        '404':
+          description: '記事が見つかりません / Article not found'
+        '401':
+          description: 'ログインが必要です / Authentication required'
+        '500':
+          description: 'サーバーエラー / Server error'
+
+  /articles/{article_id}/comments/{comment_id}:
+    patch:
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      summary: コメントを編集
+      description: |
+        既存のコメントを編集します。
+        コメント内容は10〜100文字である必要があります。
+        
+        Edit an existing comment.
+        Comment content must be between 10-100 characters.
+      operationId: updateComment
+      parameters:
+        - name: article_id
+          in: path
+          description: '記事ID / Article ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+        - name: comment_id
+          in: path
+          description: 'コメントID / Comment ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        description: '更新されたコメント / Updated comment'
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentUpdate'
+            example:
+              content: '編集されたコメント内容です'
+      responses:
+        '200':
+          description: 'コメントが正常に更新されました / Comment updated successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Comment'
+              example:
+                data:
+                  id: 1
+                  content: '編集されたコメント内容です'
+                  user_id: 1
+                  created_at: '2024-01-01T12:00:00Z'
+                  updated_at: '2024-01-01T13:00:00Z'
+        '400':
+          description: |
+            バリデーションエラー / Validation error
+            - コンテンツが短すぎる（最小10文字）/ Content too short (minimum 10 characters)
+            - コンテンツが長すぎる（最大100文字）/ Content too long (maximum 100 characters)
+        '404':
+          description: 'コメントが見つかりません / Comment not found'
+        '401':
+          description: 'ログインが必要です / Authentication required'
+        '500':
+          description: 'サーバーエラー / Server error'
+
+    delete:
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      summary: コメントを削除
+      description: |
+        指定されたコメントを削除します。
+        
+        Delete the specified comment.
+      operationId: deleteComment
+      parameters:
+        - name: article_id
+          in: path
+          description: '記事ID / Article ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+        - name: comment_id
+          in: path
+          description: 'コメントID / Comment ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '204':
+          description: 'コメントが正常に削除されました / Comment deleted successfully'
+        '404':
+          description: 'コメントが見つかりません / Comment not found'
+        '401':
+          description: 'ログインが必要です / Authentication required'
+        '500':
+          description: 'サーバーエラー / Server error'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Token
+  schemas:
+    Article:
+      type: object
+      title: '記事 / Article'
+      description: 'ニュースフィード内の記事 / An article in the news feed'
+      properties:
+        id:
+          type: integer
+          description: '記事の一意の識別子 / Unique article identifier'
+          example: 1
+        title:
+          type: string
+          description: '記事のタイトル / Article title'
+          example: 'これは記事のタイトルです'
+        content:
+          type: string
+          description: '記事の内容 / Article content'
+          example: '記事の詳細な内容がここに表示されます'
+        created_at:
+          type: string
+          format: date-time
+          description: '記事作成日時（ISO 8601形式） / Article creation date (ISO 8601 format)'
+          example: '2024-01-01T00:00:00Z'
+
+    Comment:
+      type: object
+      title: 'コメント / Comment'
+      description: '記事に投稿されたコメント / A comment posted on an article'
+      properties:
+        id:
+          type: integer
+          description: 'コメントの一意の識別子 / Unique comment identifier'
+          example: 1
+        content:
+          type: string
+          description: 'コメント内容（10〜100文字） / Comment content (10-100 characters)'
+          minLength: 10
+          maxLength: 100
+          example: 'これは素晴らしい記事です'
+        user_id:
+          type: integer
+          description: 'コメントを投稿したユーザーのID / ID of the user who posted the comment'
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+          description: 'コメント作成日時（ISO 8601形式） / Comment creation date (ISO 8601 format)'
+          example: '2024-01-01T12:00:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: 'コメント更新日時（ISO 8601形式） / Comment update date (ISO 8601 format)'
+          example: '2024-01-01T12:00:00Z'
+
+    CommentCreate:
+      type: object
+      title: 'コメント作成リクエスト / Comment Create Request'
+      description: 'コメント投稿時に必要なデータ / Data required when posting a comment'
+      required:
+        - content
+        - user_id
+      properties:
+        content:
+          type: string
+          description: 'コメント内容（10〜100文字、必須） / Comment content (10-100 characters, required)'
+          minLength: 10
+          maxLength: 100
+          example: 'これは素晴らしい記事です'
+        user_id:
+          type: integer
+          description: 'コメントを投稿するユーザーのID（必須） / ID of the user posting the comment (required)'
+          example: 1
+
+    CommentUpdate:
+      type: object
+      title: 'コメント更新リクエスト / Comment Update Request'
+      description: 'コメント編集時に必要なデータ / Data required when editing a comment'
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          description: 'コメント内容（10〜100文字、必須） / Comment content (10-100 characters, required)'
+          minLength: 10
+          maxLength: 100
+          example: '編集されたコメント内容です'

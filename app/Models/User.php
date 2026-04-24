@@ -1,19 +1,21 @@
 <?php
+// app/Models/User.php
 
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
+     * 一括代入を許可する属性。
      *
      * @var array<int, string>
      */
@@ -21,10 +23,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_admin',
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+     * シリアライズ時に非表示にする属性。
      *
      * @var array<int, string>
      */
@@ -34,7 +37,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * 属性のキャスト定義を返す。
      *
      * @return array<string, string>
      */
@@ -43,6 +46,39 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
+    }
+
+    /**
+     * 管理者ユーザーかを判定する。
+     */
+    public function isAdmin(): bool
+    {
+        return (bool) ($this->getAttribute('is_admin') ?? false);
+    }
+
+    /**
+     * ユーザーが投稿したコメント一覧。
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * ユーザーが投稿へ付与したリアクション一覧。
+     */
+    public function postReactions(): HasMany
+    {
+        return $this->hasMany(PostReaction::class);
+    }
+
+    /**
+     * ユーザーがコメントへ付与したリアクション一覧。
+     */
+    public function commentReactions(): HasMany
+    {
+        return $this->hasMany(CommentReaction::class);
     }
 }
