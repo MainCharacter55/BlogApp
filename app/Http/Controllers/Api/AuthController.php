@@ -15,6 +15,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * API 認証と二段階会員登録を扱うコントローラー。
+ */
 class AuthController extends Controller
 {
     /**

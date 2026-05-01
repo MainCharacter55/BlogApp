@@ -5,6 +5,9 @@ namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * 会員登録トークン発行 API リクエストを検証する FormRequest。
+ */
 class RequestRegistrationTokenRequest extends FormRequest
 {
     /**

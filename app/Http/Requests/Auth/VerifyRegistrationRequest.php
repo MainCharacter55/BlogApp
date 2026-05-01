@@ -6,6 +6,9 @@ namespace App\Http\Requests\Auth;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
+/**
+ * 二段階会員登録の検証 API リクエストを扱う FormRequest。
+ */
 class VerifyRegistrationRequest extends FormRequest
 {
     /**

@@ -1,11 +1,11 @@
 <?php
-// app/Http/Requests/Web/UpdateCommentRequest.php
+// app/Http/Requests/Web/StoreWebCommentRequest.php
 
 namespace App\Http\Requests\Web;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateCommentRequest extends FormRequest
+class StoreWebCommentRequest extends FormRequest
 {
     /**
      * リクエストの認可可否を判定する。
@@ -24,6 +24,9 @@ class UpdateCommentRequest extends FormRequest
     {
         return [
             'content' => ['required', 'string', 'min:10', 'max:100'],
+            'parent_id' => ['nullable', 'integer', 'exists:comments,id'],
+            'comment_sort' => ['nullable', 'in:new,popular'],
+            'website' => ['nullable', 'prohibited'],
         ];
     }
 

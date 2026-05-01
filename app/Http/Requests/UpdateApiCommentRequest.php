@@ -5,6 +5,9 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * API のコメント更新リクエストを検証する FormRequest。
+ */
 class UpdateApiCommentRequest extends FormRequest
 {
     /**

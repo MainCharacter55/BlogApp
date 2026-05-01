@@ -5,6 +5,9 @@ namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * ログイン API リクエストを検証する FormRequest。
+ */
 class LoginRequest extends FormRequest
 {
     /**

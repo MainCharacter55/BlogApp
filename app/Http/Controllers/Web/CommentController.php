@@ -4,8 +4,8 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Web\StoreCommentRequest;
-use App\Http\Requests\Web\UpdateCommentRequest;
+use App\Http\Requests\Web\StoreWebCommentRequest;
+use App\Http\Requests\Web\UpdateWebCommentRequest;
 use App\Models\Comment;
 use App\Models\Post;
 use Illuminate\Http\RedirectResponse;
@@ -16,7 +16,7 @@ class CommentController extends Controller
     /**
      * コメントを投稿する。
      */
-    public function store(StoreCommentRequest $request, Post $post): RedirectResponse
+    public function store(StoreWebCommentRequest $request, Post $post): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -58,7 +58,7 @@ class CommentController extends Controller
     /**
      * コメントを更新する。
      */
-    public function update(UpdateCommentRequest $request, Post $post, Comment $comment): RedirectResponse
+    public function update(UpdateWebCommentRequest $request, Post $post, Comment $comment): RedirectResponse
     {
         if ($comment->post_id !== $post->id) {
             abort(404);

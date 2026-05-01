@@ -3,8 +3,14 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Post;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Validation\Rule;
 
+/**
+ * API のコメント作成リクエストを検証する FormRequest。
+ */
 class StoreApiCommentRequest extends FormRequest
 {
     /**
@@ -22,9 +28,21 @@ class StoreApiCommentRequest extends FormRequest
      */
     public function rules(): array
     {
+        $post = $this->route('post');
+
+        $parentRule = ['nullable', 'integer'];
+
+        if ($post instanceof Post) {
+            $parentRule[] = Rule::exists('comments', 'id')->where(function (Builder $query) use ($post): void {
+                $query->where('post_id', $post->id);
+            });
+        } else {
+            $parentRule[] = 'exists:comments,id';
+        }
+
         return [
             'content' => ['required', 'string', 'min:10', 'max:100'],
-            'parent_id' => ['nullable', 'integer', 'exists:comments,id'],
+            'parent_id' => $parentRule,
         ];
     }
 }

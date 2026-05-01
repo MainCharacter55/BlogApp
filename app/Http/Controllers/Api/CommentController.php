@@ -5,17 +5,20 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreApiCommentRequest;
-use App\Http\Requests\UpdateCommentRequest;
+use App\Http\Requests\UpdateApiCommentRequest;
 use App\Http\Resources\CommentResource;
 use App\Models\Comment;
 use App\Models\Post;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
+/**
+ * 投稿コメントの API エンドポイントを提供するコントローラー。
+ */
 class CommentController extends Controller
 {
     /**
-     * 指定した記事のコメント一覧を新着順で取得する。
+     * 指定した投稿のコメント一覧を新着順で取得する。
      */
     public function index(Post $post): AnonymousResourceCollection
     {
@@ -33,19 +36,6 @@ class CommentController extends Controller
     {
         $validated = $request->validated();
 
-        if (! empty($validated['parent_id'])) {
-            $parentComment = Comment::query()
-                ->whereKey($validated['parent_id'])
-                ->where('post_id', $post->id)
-                ->first();
-
-            if (! $parentComment) {
-                return response()->json([
-                    'message' => __('comments.reply_parent_invalid'),
-                ], 422);
-            }
-        }
-
         $comment = Comment::create([
             'post_id' => $post->id,
             'parent_id' => $validated['parent_id'] ?? null,
@@ -61,12 +51,8 @@ class CommentController extends Controller
     /**
      * 指定したコメントを更新する。
      */
-    public function update(UpdateCommentRequest $request, Post $post, Comment $comment): JsonResponse
+    public function update(UpdateApiCommentRequest $request, Post $post, Comment $comment): JsonResponse
     {
-        if ($comment->post_id !== $post->id) {
-            abort(404);
-        }
-
         $this->authorize('update', $comment);
 
         $comment->update($request->validated());
@@ -79,10 +65,6 @@ class CommentController extends Controller
      */
     public function destroy(Post $post, Comment $comment): JsonResponse
     {
-        if ($comment->post_id !== $post->id) {
-            abort(404);
-        }
-
         $this->authorize('delete', $comment);
 
         $comment->delete();

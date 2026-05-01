@@ -4,12 +4,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StorePostRequest;
+use App\Http\Requests\StoreApiPostRequest;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
+/**
+ * 投稿の参照・作成 API を提供するコントローラー。
+ */
 class PostController extends Controller
 {
     /**
@@ -27,7 +30,7 @@ class PostController extends Controller
     /**
      * 新しい投稿を作成する。
      */
-    public function store(StorePostRequest $request): JsonResponse
+    public function store(StoreApiPostRequest $request): JsonResponse
     {
         $post = Post::query()->create($request->validated());
 

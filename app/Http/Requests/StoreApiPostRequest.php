@@ -1,11 +1,14 @@
 <?php
-// app/Http/Requests/StorePostRequest.php
+// app/Http/Requests/StoreApiPostRequest.php
 
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StorePostRequest extends FormRequest
+/**
+ * 投稿作成 API リクエストを検証する FormRequest。
+ */
+class StoreApiPostRequest extends FormRequest
 {
     /**
      * リクエストの認可可否を判定する。
