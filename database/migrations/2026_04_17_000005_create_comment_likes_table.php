@@ -12,13 +12,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('comment_likes', function (Blueprint $table) {
+        if (Schema::hasTable('comment_reactions')) {
+            return;
+        }
+
+        Schema::create('comment_reactions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('comment_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('reaction', 32)->default('like');
             $table->timestamps();
 
             $table->unique(['comment_id', 'user_id']);
+            $table->index('reaction');
         });
     }
 
@@ -27,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('comment_likes');
+        Schema::dropIfExists('comment_reactions');
     }
 };

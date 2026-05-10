@@ -121,7 +121,7 @@ The current web interface supports post browsing, comments, replies, and reactio
 
 Review1 後の改善内容 (Improvement After Review1)
 
-- Swagger / ReDoc: Rechecked implementation-vs-spec alignment and verified API paths/operations in `docs/api/comment-api.yml` match `routes/api.php`. Updated spec with correct password requirements (min 8 chars, mixed case, numbers, symbols), response structures (message/data fields, token_type), nested comment support (parent_id), and User schema.
+- Swagger / ReDoc: Rechecked implementation-vs-spec alignment and verified API paths/operations in `docs/api/comment-api.yml` match `routes/api.php`. Corrected a malformed indentation block that caused Swagger parser errors, and updated the spec with correct password requirements (min 8 chars, mixed case, numbers, symbols), response structures (message/data fields, token_type), nested comment support (parent_id), and User schema.
 - PHPDoc: Added class-level PHPDoc to API controllers and FormRequest classes to improve readability and tooling support.
 - Design (SRP / avoiding Fat Controller): Centralized API validation in FormRequest classes and removed duplicated validation logic from controllers.
 - Route Model Binding: Removed redundant parent-child checks in API comment update/delete and relied on `scopeBindings` + policies.

@@ -38,18 +38,21 @@ paths:
         - Auth
       summary: 会員登録用トークンを送信
       description: |
-        メールアドレスのみを受け取り、会員登録用の認証トークンを送信します。
-        
-        Accept an email address and send a verification token for registration.
-      operationId: requestRegistrationToken
-      requestBody:
+        parent_id:
+          type: integer
+          nullable: true
+          description: '返信先のコメントID（ネスト対応） / Parent comment ID for nested replies'
+          example: null
+        created_at:
+          type: string
+          format: date-time
+          description: 'コメント作成日時（ISO 8601形式） / Comment creation date (ISO 8601 format)'
         required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - email
+        updated_at:
+          type: string
+          format: date-time
+          description: 'コメント更新日時（ISO 8601形式） / Comment update date (ISO 8601 format)'
+          example: '2024-01-01T12:00:00Z'
               properties:
                 email:
                   type: string
@@ -580,11 +583,15 @@ components:
           type: integer
           description: 'コメントを投稿したユーザーのID / ID of the user who posted the comment'
           example: 1
-    parent_id:
-      type: integer
-      nullable: true
-      description: '返信先のコメントID（ネスト対応） / Parent comment ID for nested replies'
-      example: null
+        parent_id:
+          type: integer
+          nullable: true
+          description: '返信先のコメントID（ネスト対応） / Parent comment ID for nested replies'
+          example: null
+        created_at:
+          type: string
+          format: date-time
+          description: 'コメント作成日時（ISO 8601形式） / Comment creation date (ISO 8601 format)'
           example: '2024-01-01T12:00:00Z'
         updated_at:
           type: string

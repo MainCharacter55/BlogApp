@@ -82,6 +82,7 @@ services:
         environment:
             SPEC_URL: '/openapi/${OPENAPI_FILE_NAME}'
         volumes:
+            - './docs/redoc/index.tpl.html:/usr/share/nginx/html/index.tpl.html:ro'
             - './docs/api:/usr/share/nginx/html/openapi:ro'
         networks:
             - sail
